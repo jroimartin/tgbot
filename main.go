@@ -4,15 +4,21 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
 	"os/signal"
 	"regexp"
+	"strings"
 )
 
-// TODO (jrm): Support multiple channels
-var chat = flag.String("chat", "", "monitored chat (all if not defined)")
+var (
+	chat = flag.String("chat", "", "monitored chat (all if not defined)")
+
+	// Message format: "[MSG] title from msg"
+	msgRegexp = regexp.MustCompile(`^\[MSG\] ([^ ]+) ([^ ]+) (.*)$`)
+)
 
 func usage() {
 	fmt.Fprintln(os.Stderr, "usage: tgbot [flag] tgbin pubkey minoutput")
@@ -31,6 +37,7 @@ func main() {
 	tgbin := flag.Arg(0)
 	pubkey := flag.Arg(1)
 	minoutput := flag.Arg(2)
+	*chat = strings.Replace(*chat, " ", "_", -1)
 
 	// Clean shutdown with Ctrl-C
 	c := make(chan os.Signal, 1)
@@ -43,20 +50,14 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	/*
-		stdinPipe, err := cmd.StdinPipe()
-		if err != nil {
-			log.Fatalln(err)
-		}
-	*/
+	stdinPipe, err := cmd.StdinPipe()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	if err := cmd.Start(); err != nil {
 		log.Fatalln(err)
 	}
-
-	// TODO (jrm): multiple commands. !echo is just a POC
-	// Format: "title from msg"
-	re := regexp.MustCompile(`^\[MSG\] ([^ ]+) ([^ ]+) (.*)$`)
 
 	log.Println("Monitoring...")
 	s := bufio.NewScanner(stdoutPipe)
@@ -69,16 +70,7 @@ readLoop:
 			if !s.Scan() {
 				break readLoop
 			}
-			line := s.Text()
-			//log.Println("DEBUG:", line)
-			sm := re.FindStringSubmatch(line)
-			if len(sm) != 4 {
-				continue
-			}
-			title := sm[1]
-			from := sm[2]
-			msg := sm[3]
-			log.Printf("DEBUG: title=%s, from=%s, msg=%s\n", title, from, msg)
+			handleMsg(stdinPipe, s.Text())
 		}
 	}
 	if err := s.Err(); err != nil {
@@ -90,4 +82,34 @@ readLoop:
 	}
 
 	log.Println("Bye!")
+}
+
+func handleMsg(w io.Writer, msg string) {
+	sm := msgRegexp.FindStringSubmatch(msg)
+	if len(sm) != 4 {
+		return
+	}
+	title := sm[1]
+	from := sm[2]
+	text := sm[3]
+	log.Printf("DEBUG: title=%s, from=%s, text=%s\n", title, from, text)
+
+	if !isMonitored(title) {
+		return
+	}
+
+	handleCommand(w, title, from, text)
+}
+
+func isMonitored(title string) bool {
+	if *chat == "" || *chat == title {
+		return true
+	}
+	return false
+}
+
+func handleCommand(w io.Writer, title, from, text string) {
+	if strings.HasPrefix(text, "!echo") {
+		fmt.Fprintf(w, "msg %s %s\n", title, strings.TrimSpace(strings.TrimPrefix(text, "!echo")))
+	}
 }

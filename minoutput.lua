@@ -1,14 +1,14 @@
 started = 0
 
 function get_title(from, to)
-	if (to.type == 'user') then
+	if (to.type == "user") then
 		return from.print_name
-	elseif (to.type == 'chat') then
+	elseif (to.type == "chat") then
 		return to.print_name
-	elseif (to.type == 'encr_chat') then
+	elseif (to.type == "encr_chat") then
 		return from.print_name
 	else
-		return ''
+		return ""
 	end
 end
 
