@@ -1,5 +1,9 @@
 started = 0
 
+function sanitize_str(str)
+	return string.gsub(str, " ", "_")
+end
+
 function get_title(from, to)
 	if (to.type == "user") then
 		return from.print_name
@@ -13,14 +17,17 @@ function get_title(from, to)
 end
 
 function on_msg_receive (msg)
-  if started == 0 then
-    return
-  end
-  print("[MSG] "..get_title(msg.from, msg.to).." "..msg.from.print_name.." "..msg.text)
+	if started == 0 then
+		return
+	end
+	print("[MSG] "..
+		sanitize_str(get_title(msg.from, msg.to)).." "..
+		sanitize_str(msg.from.print_name).." "..
+		msg.text)
 end
 
 function on_binlog_replay_end ()
-  started = 1
+	started = 1
 end
 
 -- Fix error "*** lua: attempt to call a nil value"
