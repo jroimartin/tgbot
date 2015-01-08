@@ -7,7 +7,7 @@ Telegram bot
 ## Usage
 
 ```
-$ ./tgbot
+$ tgbot
 usage: tgbot config
 ```
 
