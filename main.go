@@ -22,7 +22,7 @@ var (
 	// Message format: "[MSG] title from msg".
 	msgRegexp = regexp.MustCompile(`^\[MSG\] ([^ ]+) ([^ ]+) (.*)$`)
 
-	// Global configuration
+	// Global configuration.
 	globalConfig = config{}
 
 	// Slice with the enabled commands.
@@ -98,6 +98,7 @@ readLoop:
 	log.Println("Bye!")
 }
 
+// initCommads enables plugins.
 func initCommads() {
 	commands = append(commands, newCmdEcho())
 	commands = append(commands, newCmdQuotes(globalConfig.Quotes))
