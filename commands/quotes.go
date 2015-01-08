@@ -25,6 +25,7 @@ type cmdQuotes struct {
 }
 
 type QuotesConfig struct {
+	Enabled  bool
 	Endpoint string
 	User     string
 	Password string
@@ -37,6 +38,10 @@ func NewCmdQuotes(config QuotesConfig) Command {
 		re:          regexp.MustCompile(`^!q($| .+$)`),
 		config:      config,
 	}
+}
+
+func (cmd cmdQuotes) Enabled() bool {
+	return cmd.config.Enabled
 }
 
 func (cmd cmdQuotes) Syntax() string {

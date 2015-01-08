@@ -26,7 +26,7 @@ var (
 	// Global configuration.
 	globalConfig = config{}
 
-	// Slice with the enabled commands.
+	// Enabled commands.
 	enabledCommands = []commands.Command{}
 )
 
@@ -35,6 +35,7 @@ type config struct {
 	TgPubKey  string
 	MinOutput string
 	Chat      string
+	Echo      commands.EchoConfig
 	Quotes    commands.QuotesConfig
 }
 
@@ -101,7 +102,7 @@ readLoop:
 
 // initCommads enables plugins.
 func initCommads() {
-	enabledCommands = append(enabledCommands, commands.NewCmdEcho())
+	enabledCommands = append(enabledCommands, commands.NewCmdEcho(globalConfig.Echo))
 	enabledCommands = append(enabledCommands, commands.NewCmdQuotes(globalConfig.Quotes))
 }
 
@@ -136,13 +137,15 @@ func isMonitored(title string) bool {
 func handleCommand(w io.Writer, title, from, text string) {
 	if strings.HasPrefix(text, "!?") {
 		for _, cmd := range enabledCommands {
-			fmt.Fprintf(w, "msg %s - %s: %s\n", title, cmd.Syntax(), cmd.Description())
+			if cmd.Enabled() {
+				fmt.Fprintf(w, "msg %s - %s: %s\n", title, cmd.Syntax(), cmd.Description())
+			}
 		}
 		return
 	}
 
 	for _, cmd := range enabledCommands {
-		if cmd.Match(text) {
+		if cmd.Enabled() && cmd.Match(text) {
 			if err := cmd.Run(w, title, from, text); err != nil {
 				log.Println(err)
 			}

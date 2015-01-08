@@ -16,14 +16,24 @@ type cmdEcho struct {
 	description string
 	syntax      string
 	re          *regexp.Regexp
+	config      EchoConfig
 }
 
-func NewCmdEcho() Command {
+type EchoConfig struct {
+	Enabled bool
+}
+
+func NewCmdEcho(config EchoConfig) Command {
 	return cmdEcho{
 		syntax:      "!e message",
 		description: "Echo message",
 		re:          regexp.MustCompile(`^!e .+`),
+		config:      config,
 	}
+}
+
+func (cmd cmdEcho) Enabled() bool {
+	return cmd.config.Enabled
 }
 
 func (cmd cmdEcho) Syntax() string {

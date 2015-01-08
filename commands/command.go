@@ -7,6 +7,7 @@ package commands
 import "io"
 
 type Command interface {
+	Enabled() bool
 	Syntax() string
 	Description() string
 	Match(text string) bool
