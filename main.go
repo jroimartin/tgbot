@@ -6,7 +6,6 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -15,14 +14,16 @@ import (
 	"os/signal"
 	"regexp"
 	"strings"
+
+	"github.com/BurntSushi/toml"
 )
 
 var (
-	// Monitored chat.
-	chat = flag.String("chat", "", "monitored chat (all if not defined)")
-
 	// Message format: "[MSG] title from msg".
 	msgRegexp = regexp.MustCompile(`^\[MSG\] ([^ ]+) ([^ ]+) (.*)$`)
+
+	// Global configuration
+	globalConfig = config{}
 
 	// Slice with the enabled commands.
 	commands = []Command{
@@ -30,32 +31,40 @@ var (
 	}
 )
 
-// usage shows a custom usage message.
-func usage() {
-	fmt.Fprintln(os.Stderr, "usage: tgbot [flag] tgbin pubkey minoutput")
-	flag.PrintDefaults()
+type config struct {
+	TgBin     string
+	TgPubKey  string
+	MinOutput string
+	Chat      string
+	Quotes    quotesConfig
+}
+
+type quotesConfig struct {
+	Endpoint string
+	User     string
+	Password string
 }
 
 func main() {
-	flag.Usage = usage
-	flag.Parse()
-
-	if flag.NArg() != 3 {
-		usage()
+	if len(os.Args) != 2 {
+		fmt.Fprintln(os.Stderr, "usage: tgbot config")
 		os.Exit(2)
 	}
 
-	tgbin := flag.Arg(0)
-	pubkey := flag.Arg(1)
-	minoutput := flag.Arg(2)
-	*chat = strings.Replace(*chat, " ", "_", -1)
+	configFile := os.Args[1]
+	if _, err := toml.DecodeFile(configFile, &globalConfig); err != nil {
+		log.Fatal(err)
+	}
+	globalConfig.Chat = strings.Replace(globalConfig.Chat, " ", "_", -1)
 
 	// Clean shutdown with Ctrl-C
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 
 	// -R: disable readline, -C: disable color, -D: disable output, -s: lua script
-	cmd := exec.Command(tgbin, "-R", "-C", "-D", "-s", minoutput, "-k", pubkey)
+	cmd := exec.Command(globalConfig.TgBin, "-R", "-C", "-D",
+		"-s", globalConfig.MinOutput,
+		"-k", globalConfig.TgPubKey)
 
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -116,7 +125,7 @@ func handleMsg(w io.Writer, msg string) {
 
 // isMonitored returns true if "title" is monitored.
 func isMonitored(title string) bool {
-	if *chat == "" || *chat == title {
+	if globalConfig.Chat == "" || globalConfig.Chat == title {
 		return true
 	}
 	return false
@@ -124,7 +133,7 @@ func isMonitored(title string) bool {
 
 // handleCommand selects the command and executes it.
 func handleCommand(w io.Writer, title, from, text string) {
-	if strings.HasPrefix(text, "!help") {
+	if strings.HasPrefix(text, "!?") {
 		for _, cmd := range commands {
 			fmt.Fprintf(w, "msg %s - %s: %s\n", title, cmd.Syntax(), cmd.Description())
 		}

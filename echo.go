@@ -20,9 +20,9 @@ type cmdEcho struct {
 
 func newCmdEcho() cmdEcho {
 	return cmdEcho{
-		syntax:      "!echo message",
+		syntax:      "!e message",
 		description: "Echo message",
-		re:          regexp.MustCompile(`^!echo .+`),
+		re:          regexp.MustCompile(`^!e .+`),
 	}
 }
 
@@ -39,7 +39,7 @@ func (cmd cmdEcho) Match(text string) bool {
 }
 
 func (cmd cmdEcho) Run(w io.Writer, title, from, text string) error {
-	echoText := strings.TrimSpace(strings.TrimPrefix(text, "!echo"))
+	echoText := strings.TrimSpace(strings.TrimPrefix(text, "!e"))
 	fmt.Fprintf(w, "msg %s %s said: %s\n", title, from, echoText)
 	return nil
 }
