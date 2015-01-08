@@ -14,12 +14,19 @@ import (
 )
 
 var (
+	// Monitored chat.
 	chat = flag.String("chat", "", "monitored chat (all if not defined)")
 
-	// Message format: "[MSG] title from msg"
+	// Message format: "[MSG] title from msg".
 	msgRegexp = regexp.MustCompile(`^\[MSG\] ([^ ]+) ([^ ]+) (.*)$`)
+
+	// Slice with the enabled commands.
+	commands = []Command{
+		newCmdEcho(),
+	}
 )
 
+// usage shows a custom usage message.
 func usage() {
 	fmt.Fprintln(os.Stderr, "usage: tgbot [flag] tgbin pubkey minoutput")
 	flag.PrintDefaults()
@@ -84,6 +91,8 @@ readLoop:
 	log.Println("Bye!")
 }
 
+// handleMsg parses the message and calls handleCommand
+// with the title, from and text of the message.
 func handleMsg(w io.Writer, msg string) {
 	sm := msgRegexp.FindStringSubmatch(msg)
 	if len(sm) != 4 {
@@ -101,6 +110,7 @@ func handleMsg(w io.Writer, msg string) {
 	handleCommand(w, title, from, text)
 }
 
+// isMonitored returns true if "title" is monitored.
 func isMonitored(title string) bool {
 	if *chat == "" || *chat == title {
 		return true
@@ -108,8 +118,21 @@ func isMonitored(title string) bool {
 	return false
 }
 
+// handleCommand selects the command and executes it.
 func handleCommand(w io.Writer, title, from, text string) {
-	if strings.HasPrefix(text, "!echo") {
-		fmt.Fprintf(w, "msg %s %s\n", title, strings.TrimSpace(strings.TrimPrefix(text, "!echo")))
+	if strings.HasPrefix(text, "!help") {
+		for _, cmd := range commands {
+			fmt.Fprintf(w, "msg %s - %s: %s\n", title, cmd.Syntax(), cmd.Description())
+		}
+		return
+	}
+
+	for _, cmd := range commands {
+		if cmd.Match(text) {
+			if err := cmd.Run(w, title, from, text); err != nil {
+				log.Println(err)
+			}
+			return
+		}
 	}
 }
