@@ -26,9 +26,7 @@ var (
 	globalConfig = config{}
 
 	// Slice with the enabled commands.
-	commands = []Command{
-		newCmdEcho(),
-	}
+	commands = []Command{}
 )
 
 type config struct {
@@ -37,12 +35,6 @@ type config struct {
 	MinOutput string
 	Chat      string
 	Quotes    quotesConfig
-}
-
-type quotesConfig struct {
-	Endpoint string
-	User     string
-	Password string
 }
 
 func main() {
@@ -56,6 +48,8 @@ func main() {
 		log.Fatal(err)
 	}
 	globalConfig.Chat = strings.Replace(globalConfig.Chat, " ", "_", -1)
+
+	initCommads()
 
 	// Clean shutdown with Ctrl-C
 	c := make(chan os.Signal, 1)
@@ -102,6 +96,11 @@ readLoop:
 	}
 
 	log.Println("Bye!")
+}
+
+func initCommads() {
+	commands = append(commands, newCmdEcho())
+	commands = append(commands, newCmdQuotes(globalConfig.Quotes))
 }
 
 // handleMsg parses the message and calls handleCommand
