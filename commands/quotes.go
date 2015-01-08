@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package commands
 
 import (
 	"crypto/tls"
@@ -21,16 +21,16 @@ type cmdQuotes struct {
 	description string
 	syntax      string
 	re          *regexp.Regexp
-	config      quotesConfig
+	config      QuotesConfig
 }
 
-type quotesConfig struct {
+type QuotesConfig struct {
 	Endpoint string
 	User     string
 	Password string
 }
 
-func newCmdQuotes(config quotesConfig) cmdQuotes {
+func NewCmdQuotes(config QuotesConfig) Command {
 	return cmdQuotes{
 		syntax:      "!q [message]",
 		description: "If message, add a quote. Otherwise, return a random one",

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package commands
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ type cmdEcho struct {
 	re          *regexp.Regexp
 }
 
-func newCmdEcho() cmdEcho {
+func NewCmdEcho() Command {
 	return cmdEcho{
 		syntax:      "!e message",
 		description: "Echo message",

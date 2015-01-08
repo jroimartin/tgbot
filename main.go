@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/jroimartin/tgbot/commands"
 )
 
 var (
@@ -26,7 +27,7 @@ var (
 	globalConfig = config{}
 
 	// Slice with the enabled commands.
-	commands = []Command{}
+	enabledCommands = []commands.Command{}
 )
 
 type config struct {
@@ -34,7 +35,7 @@ type config struct {
 	TgPubKey  string
 	MinOutput string
 	Chat      string
-	Quotes    quotesConfig
+	Quotes    commands.QuotesConfig
 }
 
 func main() {
@@ -100,8 +101,8 @@ readLoop:
 
 // initCommads enables plugins.
 func initCommads() {
-	commands = append(commands, newCmdEcho())
-	commands = append(commands, newCmdQuotes(globalConfig.Quotes))
+	enabledCommands = append(enabledCommands, commands.NewCmdEcho())
+	enabledCommands = append(enabledCommands, commands.NewCmdQuotes(globalConfig.Quotes))
 }
 
 // handleMsg parses the message and calls handleCommand
@@ -134,13 +135,13 @@ func isMonitored(title string) bool {
 // handleCommand selects the command and executes it.
 func handleCommand(w io.Writer, title, from, text string) {
 	if strings.HasPrefix(text, "!?") {
-		for _, cmd := range commands {
+		for _, cmd := range enabledCommands {
 			fmt.Fprintf(w, "msg %s - %s: %s\n", title, cmd.Syntax(), cmd.Description())
 		}
 		return
 	}
 
-	for _, cmd := range commands {
+	for _, cmd := range enabledCommands {
 		if cmd.Match(text) {
 			if err := cmd.Run(w, title, from, text); err != nil {
 				log.Println(err)
