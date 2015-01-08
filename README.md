@@ -7,9 +7,22 @@ Telegram bot
 ## Usage
 
 ```
-$ ./tgbot -h
-usage: tgbot [flag] tgbin pubkey minoutput
-  -chat="": monitored chat (all if not defined)
+$ ./tgbot
+usage: tgbot config
+```
+
+## Config format
+
+```toml
+TgBin = "/path/to/telegram-cli"
+TgPubKey = "/path/to/tg-server.pub"
+MinOutput = "/path/to/minoutput.lua"
+Chat = "ChatName"
+
+[Quotes]
+Endpoint = "https://example.com:8001/"
+User = "user"
+Password = "s3cr3t"
 ```
 
 ## Installation
