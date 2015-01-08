@@ -88,7 +88,7 @@ func (cmd cmdQuotes) randomQuote(w io.Writer, title string) error {
 	rndQuote := lines[rndInt]
 	log.Println(rndQuote)
 
-	fmt.Fprintf(w, "msg %s %s\n", title, rndQuote)
+	fmt.Fprintf(w, "msg %s Random quote: %s\n", title, rndQuote)
 	return nil
 }
 
