@@ -28,8 +28,12 @@ var (
 
 	// Enabled commands.
 	enabledCommands = []commands.Command{}
+
+	// Channel used to receive OS signals.
+	sig = make(chan os.Signal, 1)
 )
 
+// Configuration used for bot and commands.
 type config struct {
 	TgBin     string
 	TgPubKey  string
@@ -37,6 +41,7 @@ type config struct {
 	Chat      string
 	Echo      commands.EchoConfig
 	Quotes    commands.QuotesConfig
+	Ano       commands.AnoConfig
 }
 
 func main() {
@@ -44,18 +49,25 @@ func main() {
 		fmt.Fprintln(os.Stderr, "usage: tgbot config")
 		os.Exit(2)
 	}
-
 	configFile := os.Args[1]
 	if _, err := toml.DecodeFile(configFile, &globalConfig); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	globalConfig.Chat = strings.Replace(globalConfig.Chat, " ", "_", -1)
 
-	initCommads()
+	// Clean shutdown with Ctrl-C.
+	signal.Notify(sig, os.Interrupt, os.Kill)
 
-	// Clean shutdown with Ctrl-C
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	if err := listenAndServe(); err != nil {
+		log.Fatalln(err)
+	}
+
+	log.Println("Bye!")
+}
+
+func listenAndServe() error {
+	initCommads()
+	defer shutdownCommands()
 
 	// -R: disable readline, -C: disable color, -D: disable output, -s: lua script
 	cmd := exec.Command(globalConfig.TgBin, "-R", "-C", "-D",
@@ -64,15 +76,15 @@ func main() {
 
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 	stdinPipe, err := cmd.StdinPipe()
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	if err := cmd.Start(); err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	log.Println("Monitoring...")
@@ -80,7 +92,7 @@ func main() {
 readLoop:
 	for {
 		select {
-		case <-c: // Ctrl-C
+		case <-sig: // Ctrl-C
 			break readLoop
 		default:
 			if !s.Scan() {
@@ -90,20 +102,33 @@ readLoop:
 		}
 	}
 	if err := s.Err(); err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	if err := cmd.Wait(); err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
-	log.Println("Bye!")
+	return nil
 }
 
 // initCommads enables plugins.
 func initCommads() {
 	enabledCommands = append(enabledCommands, commands.NewCmdEcho(globalConfig.Echo))
 	enabledCommands = append(enabledCommands, commands.NewCmdQuotes(globalConfig.Quotes))
+	enabledCommands = append(enabledCommands, commands.NewCmdAno(globalConfig.Ano))
+}
+
+// shutdownCommands gracefully shuts down all commands.
+func shutdownCommands() {
+	for _, cmd := range enabledCommands {
+		if !cmd.Enabled() {
+			continue
+		}
+		if err := cmd.Shutdown(); err != nil {
+			log.Println(err)
+		}
+	}
 }
 
 // handleMsg parses the message and calls handleCommand

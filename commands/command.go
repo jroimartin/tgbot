@@ -12,4 +12,5 @@ type Command interface {
 	Description() string
 	Match(text string) bool
 	Run(w io.Writer, title, from, text string) error
+	Shutdown() error
 }

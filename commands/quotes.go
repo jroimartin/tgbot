@@ -32,7 +32,7 @@ type QuotesConfig struct {
 }
 
 func NewCmdQuotes(config QuotesConfig) Command {
-	return cmdQuotes{
+	return &cmdQuotes{
 		syntax:      "!q [message]",
 		description: "If message, add a quote. Otherwise, return a random one",
 		re:          regexp.MustCompile(`^!q($| .+$)`),
@@ -40,23 +40,23 @@ func NewCmdQuotes(config QuotesConfig) Command {
 	}
 }
 
-func (cmd cmdQuotes) Enabled() bool {
+func (cmd *cmdQuotes) Enabled() bool {
 	return cmd.config.Enabled
 }
 
-func (cmd cmdQuotes) Syntax() string {
+func (cmd *cmdQuotes) Syntax() string {
 	return cmd.syntax
 }
 
-func (cmd cmdQuotes) Description() string {
+func (cmd *cmdQuotes) Description() string {
 	return cmd.description
 }
 
-func (cmd cmdQuotes) Match(text string) bool {
+func (cmd *cmdQuotes) Match(text string) bool {
 	return cmd.re.MatchString(text)
 }
 
-func (cmd cmdQuotes) Run(w io.Writer, title, from, text string) error {
+func (cmd *cmdQuotes) Run(w io.Writer, title, from, text string) error {
 	var err error
 
 	quoteText := strings.TrimSpace(strings.TrimPrefix(text, "!q"))
@@ -68,9 +68,14 @@ func (cmd cmdQuotes) Run(w io.Writer, title, from, text string) error {
 	return err
 }
 
-func (cmd cmdQuotes) randomQuote(w io.Writer, title string) error {
+func (cmd *cmdQuotes) Shutdown() error {
+	return nil
+}
+
+func (cmd *cmdQuotes) randomQuote(w io.Writer, title string) error {
 	req, err := http.NewRequest("GET", cmd.config.Endpoint, nil)
 	if err != nil {
+		fmt.Fprintf(w, "msg %s error: Cannot get quote\n", title)
 		return err
 	}
 	req.SetBasicAuth(cmd.config.User, cmd.config.Password)
@@ -80,12 +85,14 @@ func (cmd cmdQuotes) randomQuote(w io.Writer, title string) error {
 	client := &http.Client{Transport: tr}
 	res, err := client.Do(req)
 	if err != nil {
+		fmt.Fprintf(w, "msg %s error: Cannot get quote\n", title)
 		return err
 	}
 
 	quotes, err := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
+		fmt.Fprintf(w, "msg %s error: Cannot get quote\n", title)
 		return err
 	}
 	lines := strings.Split(string(quotes), "\n")
@@ -97,10 +104,11 @@ func (cmd cmdQuotes) randomQuote(w io.Writer, title string) error {
 	return nil
 }
 
-func (cmd cmdQuotes) addQuote(w io.Writer, title string, text string) error {
+func (cmd *cmdQuotes) addQuote(w io.Writer, title string, text string) error {
 	r := strings.NewReader(text)
 	req, err := http.NewRequest("POST", cmd.config.Endpoint, r)
 	if err != nil {
+		fmt.Fprintf(w, "msg %s error: Cannot add quote\n", title)
 		return err
 	}
 	req.SetBasicAuth(cmd.config.User, cmd.config.Password)
@@ -110,12 +118,13 @@ func (cmd cmdQuotes) addQuote(w io.Writer, title string, text string) error {
 	client := &http.Client{Transport: tr}
 	res, err := client.Do(req)
 	if err != nil {
+		fmt.Fprintf(w, "msg %s error: Cannot add quote\n", title)
 		return err
 	}
 
 	if res.StatusCode != http.StatusOK {
 		fmt.Fprintf(w, "msg %s error (%d): Cannot add quote\n", title, res.StatusCode)
-		return fmt.Errorf("Cannot add quote (%d - %s: %s)", res.StatusCode, title, text)
+		return fmt.Errorf("cannot add quote (%d - %s: %s)", res.StatusCode, title, text)
 	}
 
 	fmt.Fprintf(w, "msg %s New quote added: %s\n", title, text)
