@@ -95,7 +95,6 @@ func (cmd *cmdAno) Run(w io.Writer, title, from, text string) error {
 	}
 
 	// Create tmp file
-	log.Println(cmd.picsDir)
 	if cmd.picsDir == "" {
 		cmd.picsDir, err = ioutil.TempDir("", "tgbot")
 		if err != nil {
