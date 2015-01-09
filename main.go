@@ -24,7 +24,7 @@ var (
 	msgRegexp = regexp.MustCompile(`^\[MSG\] ([^ ]+) ([^ ]+) (.*)$`)
 
 	// Global configuration.
-	globalConfig = config{}
+	globalConfig config
 
 	// Enabled commands.
 	enabledCommands = []commands.Command{}
