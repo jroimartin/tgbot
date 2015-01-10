@@ -116,10 +116,14 @@ func (cmd *cmdAno) randomPic(title string) (path string, err error) {
 	if err != nil {
 		return "", err
 	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("HTTP error: %v (%v)", res.Status, res.StatusCode)
+	}
 
 	// Receive data
 	bdata, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
 	if err != nil {
 		return "", err
 	}
@@ -131,7 +135,7 @@ func (cmd *cmdAno) randomPic(title string) (path string, err error) {
 	// Download pic
 	path, err = cmd.download(data.Pic.ID)
 	if err != nil {
-		return "", fmt.Errorf("cannot download pic")
+		return "", err
 	}
 	return path, nil
 }
@@ -159,16 +163,23 @@ func (cmd *cmdAno) searchTag(title string, tags []string) (path string, err erro
 	if err != nil {
 		return "", err
 	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("HTTP error: %v (%v)", res.Status, res.StatusCode)
+	}
 
 	// Receive data
 	bdata, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
 	if err != nil {
 		return "", err
 	}
 	err = json.Unmarshal(bdata, &data)
 	if err != nil {
 		return "", err
+	}
+	if len(data.Pics) <= 1 { // If there aren't quotes, lines == []string{""}
+		return "", errors.New("no pics")
 	}
 
 	rndInt := rand.Intn(len(data.Pics) - 1)
@@ -177,7 +188,7 @@ func (cmd *cmdAno) searchTag(title string, tags []string) (path string, err erro
 	// Download pic
 	path, err = cmd.download(rndData.ID)
 	if err != nil {
-		return "", fmt.Errorf("cannot download pic")
+		return "", err
 	}
 	return path, nil
 }
@@ -199,6 +210,10 @@ func (cmd *cmdAno) download(picID string) (path string, err error) {
 		return "", err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("HTTP error: %v (%v)", res.Status, res.StatusCode)
+	}
 
 	f, err := cmd.createTempFile(picID)
 	if err != nil && err != errorNew {
