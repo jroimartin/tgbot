@@ -88,9 +88,14 @@ func (cmd *cmdQuotes) randomQuote(w io.Writer, title string) error {
 		fmt.Fprintf(w, "msg %v error: Cannot get quote\n", title)
 		return err
 	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Fprintf(w, "msg %v error (%v): Cannot get quote\n", title, res.StatusCode)
+		return fmt.Errorf("cannot get quote (%v)", res.StatusCode)
+	}
 
 	quotes, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
 	if err != nil {
 		fmt.Fprintf(w, "msg %v error: Cannot get quote\n", title)
 		return err
@@ -125,7 +130,7 @@ func (cmd *cmdQuotes) addQuote(w io.Writer, title string, text string) error {
 		fmt.Fprintf(w, "msg %v error: Cannot add quote\n", title)
 		return err
 	}
-	res.Body.Close()
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		fmt.Fprintf(w, "msg %v error (%v): Cannot add quote\n", title, res.StatusCode)
