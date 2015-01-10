@@ -6,6 +6,7 @@ package commands
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -75,7 +76,7 @@ func (cmd *cmdQuotes) Shutdown() error {
 func (cmd *cmdQuotes) randomQuote(w io.Writer, title string) error {
 	req, err := http.NewRequest("GET", cmd.config.Endpoint, nil)
 	if err != nil {
-		fmt.Fprintf(w, "msg %s error: Cannot get quote\n", title)
+		fmt.Fprintf(w, "msg %v error: Cannot get quote\n", title)
 		return err
 	}
 	req.SetBasicAuth(cmd.config.User, cmd.config.Password)
@@ -85,22 +86,27 @@ func (cmd *cmdQuotes) randomQuote(w io.Writer, title string) error {
 	client := &http.Client{Transport: tr}
 	res, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(w, "msg %s error: Cannot get quote\n", title)
+		fmt.Fprintf(w, "msg %v error: Cannot get quote\n", title)
 		return err
 	}
 
 	quotes, err := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
-		fmt.Fprintf(w, "msg %s error: Cannot get quote\n", title)
+		fmt.Fprintf(w, "msg %v error: Cannot get quote\n", title)
 		return err
 	}
 	lines := strings.Split(string(quotes), "\n")
+	if len(lines) <= 1 { // If there aren't quotes, lines == []string{""}
+		fmt.Fprintf(w, "msg %v error: no quotes\n", title)
+		return errors.New("no quotes")
+	}
+
 	rndInt := rand.Intn(len(lines) - 1)
 	rndQuote := lines[rndInt]
 	log.Println(rndQuote)
 
-	fmt.Fprintf(w, "msg %s Random quote: %s\n", title, rndQuote)
+	fmt.Fprintf(w, "msg %v Random quote: %v\n", title, rndQuote)
 	return nil
 }
 
@@ -108,7 +114,7 @@ func (cmd *cmdQuotes) addQuote(w io.Writer, title string, text string) error {
 	r := strings.NewReader(text)
 	req, err := http.NewRequest("POST", cmd.config.Endpoint, r)
 	if err != nil {
-		fmt.Fprintf(w, "msg %s error: Cannot add quote\n", title)
+		fmt.Fprintf(w, "msg %v error: Cannot add quote\n", title)
 		return err
 	}
 	req.SetBasicAuth(cmd.config.User, cmd.config.Password)
@@ -118,16 +124,16 @@ func (cmd *cmdQuotes) addQuote(w io.Writer, title string, text string) error {
 	client := &http.Client{Transport: tr}
 	res, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(w, "msg %s error: Cannot add quote\n", title)
+		fmt.Fprintf(w, "msg %v error: Cannot add quote\n", title)
 		return err
 	}
 	res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		fmt.Fprintf(w, "msg %s error (%d): Cannot add quote\n", title, res.StatusCode)
-		return fmt.Errorf("cannot add quote (%d - %s: %s)", res.StatusCode, title, text)
+		fmt.Fprintf(w, "msg %v error (%v): Cannot add quote\n", title, res.StatusCode)
+		return fmt.Errorf("cannot add quote (%v - %v: %v)", res.StatusCode, title, text)
 	}
 
-	fmt.Fprintf(w, "msg %s New quote added: %s\n", title, text)
+	fmt.Fprintf(w, "msg %v New quote added: %v\n", title, text)
 	return nil
 }

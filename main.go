@@ -141,7 +141,7 @@ func handleMsg(w io.Writer, msg string) {
 	title := sm[1]
 	from := sm[2]
 	text := sm[3]
-	log.Printf("DEBUG: title=%s, from=%s, text=%s\n", title, from, text)
+	log.Printf("DEBUG: title=%v, from=%v, text=%v\n", title, from, text)
 
 	if !isMonitored(title) {
 		return
@@ -163,7 +163,7 @@ func handleCommand(w io.Writer, title, from, text string) {
 	if strings.HasPrefix(text, "!?") {
 		for _, cmd := range enabledCommands {
 			if cmd.Enabled() {
-				fmt.Fprintf(w, "msg %s - %s: %s\n", title, cmd.Syntax(), cmd.Description())
+				fmt.Fprintf(w, "msg %v - %v: %v\n", title, cmd.Syntax(), cmd.Description())
 			}
 		}
 		return
