@@ -21,6 +21,8 @@ import (
 
 var errorNew = errors.New("new file")
 
+const picsURL = "http://ano.lolcathost.org/pics/"
+
 type cmdAno struct {
 	name        string
 	description string
@@ -97,7 +99,7 @@ func (cmd *cmdAno) Run(w io.Writer, title, from, text string) error {
 }
 
 // randomPic returns a random pic from ANO
-func (cmd *cmdAno) randomPic(title string) (path string, err error) {
+func (cmd *cmdAno) randomPic(title string) (filePath string, err error) {
 	var data struct {
 		Pic struct {
 			ID string
@@ -133,15 +135,18 @@ func (cmd *cmdAno) randomPic(title string) (path string, err error) {
 	}
 
 	// Download pic
-	path, err = cmd.download(data.Pic.ID)
+	filePath, err = download(cmd.tempDir, picsURL+data.Pic.ID)
 	if err != nil {
 		return "", err
 	}
-	return path, nil
+	if cmd.tempDir == "" {
+		cmd.tempDir = path.Dir(filePath)
+	}
+	return filePath, nil
 }
 
 // searchTag returns a pic from ANO with a given tag.
-func (cmd *cmdAno) searchTag(title string, tags []string) (path string, err error) {
+func (cmd *cmdAno) searchTag(title string, tags []string) (filePath string, err error) {
 	var data struct {
 		Pics []struct {
 			ID string
@@ -186,11 +191,14 @@ func (cmd *cmdAno) searchTag(title string, tags []string) (path string, err erro
 	rndData := data.Pics[rndInt]
 
 	// Download pic
-	path, err = cmd.download(rndData.ID)
+	filePath, err = download(cmd.tempDir, picsURL+rndData.ID)
 	if err != nil {
 		return "", err
 	}
-	return path, nil
+	if cmd.tempDir == "" {
+		cmd.tempDir = path.Dir(filePath)
+	}
+	return filePath, nil
 }
 
 // tagsString construct a valid string with the tags to be
@@ -200,66 +208,4 @@ func tagsString(tags []string) string {
 		tags[i] = fmt.Sprintf("\"%v\"", strings.TrimSpace(tags[i]))
 	}
 	return strings.Join(tags, ",")
-}
-
-// download downloads the pic on the given URL and return
-// the file.
-func (cmd *cmdAno) download(picID string) (path string, err error) {
-	res, err := http.Get("http://ano.lolcathost.org/pics/" + picID)
-	if err != nil {
-		return "", err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("HTTP error: %v (%v)", res.Status, res.StatusCode)
-	}
-
-	f, err := cmd.createTempFile(picID)
-	if err != nil && err != errorNew {
-		return "", err
-	}
-	defer f.Close()
-
-	if err == errorNew {
-		_, err = io.Copy(f, res.Body)
-		if err != nil {
-			return "", err
-		}
-	}
-	return f.Name(), nil
-}
-
-// createTempFile tries to create a new temporary file with
-// the given name. It is important to note that the error
-// will be errorNew if the file did not exist. It also
-// creates a temporary directory in case it has not been
-// created yet.
-func (cmd *cmdAno) createTempFile(filename string) (*os.File, error) {
-	var err, ferr error
-
-	if cmd.tempDir == "" {
-		cmd.tempDir, err = ioutil.TempDir("", "tgbot")
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	path := path.Join(cmd.tempDir, filename)
-
-	var f *os.File
-	f, err = os.Open(path)
-	if err != nil && !os.IsNotExist(err) {
-		return nil, err
-	}
-
-	if os.IsNotExist(err) {
-		f, err = os.Create(path)
-		if err != nil {
-			return nil, err
-		}
-		ferr = errorNew
-	}
-
-	return f, ferr
 }
