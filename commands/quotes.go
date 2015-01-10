@@ -121,6 +121,7 @@ func (cmd *cmdQuotes) addQuote(w io.Writer, title string, text string) error {
 		fmt.Fprintf(w, "msg %s error: Cannot add quote\n", title)
 		return err
 	}
+	res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		fmt.Fprintf(w, "msg %s error (%d): Cannot add quote\n", title, res.StatusCode)
