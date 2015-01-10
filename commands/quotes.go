@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"net/http"
 	"regexp"
@@ -104,7 +103,6 @@ func (cmd *cmdQuotes) randomQuote(w io.Writer, title string) error {
 
 	rndInt := rand.Intn(len(lines) - 1)
 	rndQuote := lines[rndInt]
-	log.Println(rndQuote)
 
 	fmt.Fprintf(w, "msg %v Random quote: %v\n", title, rndQuote)
 	return nil
