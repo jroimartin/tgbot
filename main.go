@@ -46,6 +46,7 @@ type config struct {
 	Echo      commands.EchoConfig
 	Quotes    commands.QuotesConfig
 	Ano       commands.AnoConfig
+	Breakfast commands.BreakfastConfig
 }
 
 func main() {
@@ -70,7 +71,8 @@ func main() {
 }
 
 func listenAndServe() error {
-	// -R: disable readline, -C: disable color, -D: disable output, -s: lua script
+	// -R: disable readline, -C: disable color, -D: disable output,
+	// -s: lua script
 	cmd := exec.Command(globalConfig.TgBin, "-R", "-C", "-D",
 		"-s", globalConfig.MinOutput,
 		"-k", globalConfig.TgPubKey)
@@ -119,9 +121,14 @@ readLoop:
 
 // initCommads enables plugins.
 func initCommads() {
-	enabledCommands = append(enabledCommands, commands.NewCmdEcho(stdinTg, globalConfig.Echo))
-	enabledCommands = append(enabledCommands, commands.NewCmdQuotes(stdinTg, globalConfig.Quotes))
-	enabledCommands = append(enabledCommands, commands.NewCmdAno(stdinTg, globalConfig.Ano))
+	enabledCommands = append(enabledCommands,
+		commands.NewCmdEcho(stdinTg, globalConfig.Echo))
+	enabledCommands = append(enabledCommands,
+		commands.NewCmdQuotes(stdinTg, globalConfig.Quotes))
+	enabledCommands = append(enabledCommands,
+		commands.NewCmdAno(stdinTg, globalConfig.Ano))
+	enabledCommands = append(enabledCommands,
+		commands.NewCmdBreakfast(stdinTg, globalConfig.Breakfast))
 }
 
 // shutdownCommands gracefully shuts down all commands.
@@ -152,7 +159,9 @@ func handleMsg(msg string) {
 		return
 	}
 
-	handleCommand(title, from, text)
+	if strings.HasPrefix(text, "!") {
+		handleCommand(title, from, text)
+	}
 }
 
 // isMonitored returns true if "title" is monitored.
@@ -168,7 +177,8 @@ func handleCommand(title, from, text string) {
 	if strings.HasPrefix(text, "!?") {
 		for _, cmd := range enabledCommands {
 			if cmd.Enabled() {
-				fmt.Fprintf(stdinTg, "msg %v - %v: %v\n", title, cmd.Syntax(), cmd.Description())
+				fmt.Fprintf(stdinTg, "msg %v - %v: %v\n",
+					title, cmd.Syntax(), cmd.Description())
 			}
 		}
 		return
@@ -182,4 +192,6 @@ func handleCommand(title, from, text string) {
 			return
 		}
 	}
+
+	fmt.Fprintf(stdinTg, "msg %v error: unknown command\n", title)
 }
