@@ -31,6 +31,10 @@ var (
 
 	// Channel used to receive OS signals.
 	sig = make(chan os.Signal, 1)
+
+	// Communication pipes with the tg client
+	stdoutTg io.ReadCloser
+	stdinTg  io.WriteCloser
 )
 
 // Configuration used for bot and commands.
@@ -55,7 +59,7 @@ func main() {
 	}
 	globalConfig.Chat = strings.Replace(globalConfig.Chat, " ", "_", -1)
 
-	// Clean shutdown with Ctrl-C.
+	// Clean shutdown with Ctrl-C
 	signal.Notify(sig, os.Interrupt, os.Kill)
 
 	if err := listenAndServe(); err != nil {
@@ -66,19 +70,16 @@ func main() {
 }
 
 func listenAndServe() error {
-	initCommads()
-	defer shutdownCommands()
-
 	// -R: disable readline, -C: disable color, -D: disable output, -s: lua script
 	cmd := exec.Command(globalConfig.TgBin, "-R", "-C", "-D",
 		"-s", globalConfig.MinOutput,
 		"-k", globalConfig.TgPubKey)
 
-	stdoutPipe, err := cmd.StdoutPipe()
+	stdoutTg, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
 	}
-	stdinPipe, err := cmd.StdinPipe()
+	stdinTg, err = cmd.StdinPipe()
 	if err != nil {
 		return err
 	}
@@ -87,8 +88,12 @@ func listenAndServe() error {
 		return err
 	}
 
+	// initCommads must be caled after stdinTg and stdoutTg has bee initialized
+	initCommads()
+	defer shutdownCommands()
+
 	log.Println("Monitoring...")
-	s := bufio.NewScanner(stdoutPipe)
+	s := bufio.NewScanner(stdoutTg)
 readLoop:
 	for {
 		select {
@@ -98,7 +103,7 @@ readLoop:
 			if !s.Scan() {
 				break readLoop
 			}
-			handleMsg(stdinPipe, s.Text())
+			handleMsg(s.Text())
 		}
 	}
 	if err := s.Err(); err != nil {
@@ -114,9 +119,9 @@ readLoop:
 
 // initCommads enables plugins.
 func initCommads() {
-	enabledCommands = append(enabledCommands, commands.NewCmdEcho(globalConfig.Echo))
-	enabledCommands = append(enabledCommands, commands.NewCmdQuotes(globalConfig.Quotes))
-	enabledCommands = append(enabledCommands, commands.NewCmdAno(globalConfig.Ano))
+	enabledCommands = append(enabledCommands, commands.NewCmdEcho(stdinTg, globalConfig.Echo))
+	enabledCommands = append(enabledCommands, commands.NewCmdQuotes(stdinTg, globalConfig.Quotes))
+	enabledCommands = append(enabledCommands, commands.NewCmdAno(stdinTg, globalConfig.Ano))
 }
 
 // shutdownCommands gracefully shuts down all commands.
@@ -133,7 +138,7 @@ func shutdownCommands() {
 
 // handleMsg parses the message and calls handleCommand
 // with the title, from and text of the message.
-func handleMsg(w io.Writer, msg string) {
+func handleMsg(msg string) {
 	sm := msgRegexp.FindStringSubmatch(msg)
 	if len(sm) != 4 {
 		return
@@ -147,7 +152,7 @@ func handleMsg(w io.Writer, msg string) {
 		return
 	}
 
-	handleCommand(w, title, from, text)
+	handleCommand(title, from, text)
 }
 
 // isMonitored returns true if "title" is monitored.
@@ -159,11 +164,11 @@ func isMonitored(title string) bool {
 }
 
 // handleCommand selects the command and executes it.
-func handleCommand(w io.Writer, title, from, text string) {
+func handleCommand(title, from, text string) {
 	if strings.HasPrefix(text, "!?") {
 		for _, cmd := range enabledCommands {
 			if cmd.Enabled() {
-				fmt.Fprintf(w, "msg %v - %v: %v\n", title, cmd.Syntax(), cmd.Description())
+				fmt.Fprintf(stdinTg, "msg %v - %v: %v\n", title, cmd.Syntax(), cmd.Description())
 			}
 		}
 		return
@@ -171,7 +176,7 @@ func handleCommand(w io.Writer, title, from, text string) {
 
 	for _, cmd := range enabledCommands {
 		if cmd.Enabled() && cmd.Match(text) {
-			if err := cmd.Run(w, title, from, text); err != nil {
+			if err := cmd.Run(title, from, text); err != nil {
 				log.Println(err)
 			}
 			return

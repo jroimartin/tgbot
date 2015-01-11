@@ -16,6 +16,7 @@ type cmdEcho struct {
 	description string
 	syntax      string
 	re          *regexp.Regexp
+	w           io.Writer
 	config      EchoConfig
 }
 
@@ -23,11 +24,12 @@ type EchoConfig struct {
 	Enabled bool
 }
 
-func NewCmdEcho(config EchoConfig) Command {
+func NewCmdEcho(w io.Writer, config EchoConfig) Command {
 	return &cmdEcho{
 		syntax:      "!e message",
 		description: "Echo message",
 		re:          regexp.MustCompile(`^!e .+`),
+		w:           w,
 		config:      config,
 	}
 }
@@ -48,9 +50,9 @@ func (cmd *cmdEcho) Match(text string) bool {
 	return cmd.re.MatchString(text)
 }
 
-func (cmd *cmdEcho) Run(w io.Writer, title, from, text string) error {
+func (cmd *cmdEcho) Run(title, from, text string) error {
 	echoText := strings.TrimSpace(strings.TrimPrefix(text, "!e"))
-	fmt.Fprintf(w, "msg %v Echo: %v said \"%v\"\n", title, from, echoText)
+	fmt.Fprintf(cmd.w, "msg %v Echo: %v said \"%v\"\n", title, from, echoText)
 	return nil
 }
 

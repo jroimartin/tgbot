@@ -14,7 +14,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"path"
 	"regexp"
 	"strings"
 )
@@ -28,6 +27,7 @@ type cmdAno struct {
 	description string
 	syntax      string
 	re          *regexp.Regexp
+	w           io.Writer
 	config      AnoConfig
 
 	// Regexp used to get the pic URL
@@ -38,11 +38,12 @@ type AnoConfig struct {
 	Enabled bool
 }
 
-func NewCmdAno(config AnoConfig) Command {
+func NewCmdAno(w io.Writer, config AnoConfig) Command {
 	return &cmdAno{
 		syntax:      "!a [tags]",
 		description: "if tags, search ANO by tags (comma-separated). Otherwise return a random pic",
 		re:          regexp.MustCompile(`^!a($| .+$)`),
+		w:           w,
 		config:      config,
 	}
 }
@@ -75,11 +76,20 @@ func (cmd *cmdAno) Shutdown() error {
 	return nil
 }
 
-func (cmd *cmdAno) Run(w io.Writer, title, from, text string) error {
+func (cmd *cmdAno) Run(title, from, text string) error {
 	var (
 		path string
 		err  error
 	)
+
+	if cmd.tempDir == "" {
+		cmd.tempDir, err = ioutil.TempDir("", "tgbot-ano-")
+		if err != nil {
+			fmt.Fprintf(cmd.w, "msg %v error: internal command error\n", title)
+			return err
+		}
+		log.Println("Created ANO pics dir:", cmd.tempDir)
+	}
 
 	tags := strings.TrimSpace(strings.TrimPrefix(text, "!a"))
 	if tags == "" {
@@ -88,13 +98,13 @@ func (cmd *cmdAno) Run(w io.Writer, title, from, text string) error {
 		path, err = cmd.searchTag(title, strings.Split(tags, ","))
 	}
 	if err != nil {
-		fmt.Fprintf(w, "msg %v error: Cannot get pic\n", title)
+		fmt.Fprintf(cmd.w, "msg %v error: cannot get pic\n", title)
 		return err
 	}
 
 	// Send to tg as document
-	fmt.Fprintf(w, "msg %v What has been seen cannot be unseen...\n", title)
-	fmt.Fprintf(w, "send_document %v %v\n", title, path)
+	fmt.Fprintf(cmd.w, "msg %v What has been seen cannot be unseen...\n", title)
+	fmt.Fprintf(cmd.w, "send_document %v %v\n", title, path)
 	return nil
 }
 
@@ -138,9 +148,6 @@ func (cmd *cmdAno) randomPic(title string) (filePath string, err error) {
 	filePath, err = download(cmd.tempDir, picsURL+data.Pic.ID)
 	if err != nil {
 		return "", err
-	}
-	if cmd.tempDir == "" {
-		cmd.tempDir = path.Dir(filePath)
 	}
 	return filePath, nil
 }
@@ -194,9 +201,6 @@ func (cmd *cmdAno) searchTag(title string, tags []string) (filePath string, err 
 	filePath, err = download(cmd.tempDir, picsURL+rndData.ID)
 	if err != nil {
 		return "", err
-	}
-	if cmd.tempDir == "" {
-		cmd.tempDir = path.Dir(filePath)
 	}
 	return filePath, nil
 }

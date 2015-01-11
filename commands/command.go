@@ -4,13 +4,11 @@
 
 package commands
 
-import "io"
-
 type Command interface {
 	Enabled() bool
 	Syntax() string
 	Description() string
 	Match(text string) bool
-	Run(w io.Writer, title, from, text string) error
+	Run(title, from, text string) error
 	Shutdown() error
 }

@@ -7,7 +7,6 @@ package commands
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,9 +16,6 @@ import (
 // download downloads the file on the given URL to a
 // temporary directory and return the path where it has
 // been saved.
-//
-// If dstDir is "", it will create a new temporary
-// directory, that can be obtained with path.Dir(filePath).
 func download(dstDir string, targetURL string) (filePath string, err error) {
 	res, err := http.Get(targetURL)
 	if err != nil {
@@ -36,7 +32,7 @@ func download(dstDir string, targetURL string) (filePath string, err error) {
 	if err != nil {
 		return "", err
 	}
-	f, err := createTempFile(dstDir, path.Base(u.Path))
+	f, err := openCreateFile(dstDir, path.Base(u.Path))
 	if err != nil && err != errorNew {
 		return "", err
 	}
@@ -51,23 +47,13 @@ func download(dstDir string, targetURL string) (filePath string, err error) {
 	return f.Name(), nil
 }
 
-// createTempFile tries to create a new temporary file with
-// the given name at the specified destination directory.
-// If there is a file with the same file name, the function
-// will return that file. It is important to note that the error
-// will be errorNew if the file did not exist.
-//
-// If dstDir is "", it will create a new temporary
-// directory.
-func createTempFile(dstDir string, filename string) (*os.File, error) {
+// openCreateFile tries to open an existing file with the
+// given name at the specified destination directory. If
+// the file does not exist, it will create a new one. It is
+// important to note that the error will be errorNew if it
+// was necessary to create the file.
+func openCreateFile(dstDir string, filename string) (*os.File, error) {
 	var err, ferr error
-
-	if dstDir == "" {
-		dstDir, err = ioutil.TempDir("", "tgbot")
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	path := path.Join(dstDir, filename)
 

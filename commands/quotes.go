@@ -21,6 +21,7 @@ type cmdQuotes struct {
 	description string
 	syntax      string
 	re          *regexp.Regexp
+	w           io.Writer
 	config      QuotesConfig
 }
 
@@ -31,11 +32,12 @@ type QuotesConfig struct {
 	Password string
 }
 
-func NewCmdQuotes(config QuotesConfig) Command {
+func NewCmdQuotes(w io.Writer, config QuotesConfig) Command {
 	return &cmdQuotes{
 		syntax:      "!q [message]",
 		description: "If message, add a quote. Otherwise, return a random one",
 		re:          regexp.MustCompile(`^!q($| .+$)`),
+		w:           w,
 		config:      config,
 	}
 }
@@ -56,14 +58,14 @@ func (cmd *cmdQuotes) Match(text string) bool {
 	return cmd.re.MatchString(text)
 }
 
-func (cmd *cmdQuotes) Run(w io.Writer, title, from, text string) error {
+func (cmd *cmdQuotes) Run(title, from, text string) error {
 	var err error
 
 	quoteText := strings.TrimSpace(strings.TrimPrefix(text, "!q"))
 	if quoteText == "" {
-		err = cmd.randomQuote(w, title)
+		err = cmd.randomQuote(title)
 	} else {
-		err = cmd.addQuote(w, title, quoteText)
+		err = cmd.addQuote(title, quoteText)
 	}
 	return err
 }
@@ -72,10 +74,10 @@ func (cmd *cmdQuotes) Shutdown() error {
 	return nil
 }
 
-func (cmd *cmdQuotes) randomQuote(w io.Writer, title string) error {
+func (cmd *cmdQuotes) randomQuote(title string) error {
 	req, err := http.NewRequest("GET", cmd.config.Endpoint, nil)
 	if err != nil {
-		fmt.Fprintf(w, "msg %v error: Cannot get quote\n", title)
+		fmt.Fprintf(cmd.w, "msg %v error: Cannot get quote\n", title)
 		return err
 	}
 	req.SetBasicAuth(cmd.config.User, cmd.config.Password)
@@ -85,39 +87,39 @@ func (cmd *cmdQuotes) randomQuote(w io.Writer, title string) error {
 	client := &http.Client{Transport: tr}
 	res, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(w, "msg %v error: Cannot get quote\n", title)
+		fmt.Fprintf(cmd.w, "msg %v error: Cannot get quote\n", title)
 		return err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		fmt.Fprintf(w, "msg %v error (%v): Cannot get quote\n", title, res.StatusCode)
+		fmt.Fprintf(cmd.w, "msg %v error (%v): Cannot get quote\n", title, res.StatusCode)
 		return fmt.Errorf("cannot get quote (%v)", res.StatusCode)
 	}
 
 	quotes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		fmt.Fprintf(w, "msg %v error: Cannot get quote\n", title)
+		fmt.Fprintf(cmd.w, "msg %v error: Cannot get quote\n", title)
 		return err
 	}
 	lines := strings.Split(string(quotes), "\n")
 	if len(lines) <= 1 { // If there aren't quotes, lines == []string{""}
-		fmt.Fprintf(w, "msg %v error: no quotes\n", title)
+		fmt.Fprintf(cmd.w, "msg %v error: no quotes\n", title)
 		return errors.New("no quotes")
 	}
 
 	rndInt := rand.Intn(len(lines) - 1)
 	rndQuote := lines[rndInt]
 
-	fmt.Fprintf(w, "msg %v Random quote: %v\n", title, rndQuote)
+	fmt.Fprintf(cmd.w, "msg %v Random quote: %v\n", title, rndQuote)
 	return nil
 }
 
-func (cmd *cmdQuotes) addQuote(w io.Writer, title string, text string) error {
+func (cmd *cmdQuotes) addQuote(title string, text string) error {
 	r := strings.NewReader(text)
 	req, err := http.NewRequest("POST", cmd.config.Endpoint, r)
 	if err != nil {
-		fmt.Fprintf(w, "msg %v error: Cannot add quote\n", title)
+		fmt.Fprintf(cmd.w, "msg %v error: Cannot add quote\n", title)
 		return err
 	}
 	req.SetBasicAuth(cmd.config.User, cmd.config.Password)
@@ -127,16 +129,16 @@ func (cmd *cmdQuotes) addQuote(w io.Writer, title string, text string) error {
 	client := &http.Client{Transport: tr}
 	res, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(w, "msg %v error: Cannot add quote\n", title)
+		fmt.Fprintf(cmd.w, "msg %v error: Cannot add quote\n", title)
 		return err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		fmt.Fprintf(w, "msg %v error (%v): Cannot add quote\n", title, res.StatusCode)
+		fmt.Fprintf(cmd.w, "msg %v error (%v): Cannot add quote\n", title, res.StatusCode)
 		return fmt.Errorf("cannot add quote (%v - %v: %v)", res.StatusCode, title, text)
 	}
 
-	fmt.Fprintf(w, "msg %v New quote added: %v\n", title, text)
+	fmt.Fprintf(cmd.w, "msg %v New quote added: %v\n", title, text)
 	return nil
 }
