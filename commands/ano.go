@@ -23,7 +23,6 @@ var errorNew = errors.New("new file")
 const picsURL = "http://ano.lolcathost.org/pics/"
 
 type cmdAno struct {
-	name        string
 	description string
 	syntax      string
 	re          *regexp.Regexp
@@ -42,7 +41,7 @@ func NewCmdAno(w io.Writer, config AnoConfig) Command {
 	return &cmdAno{
 		syntax:      "!a [tags]",
 		description: "if tags, search ANO by tags (comma-separated). Otherwise return a random pic",
-		re:          regexp.MustCompile(`^!a($| .+$)`),
+		re:          regexp.MustCompile(`^!a($| [\w ,]+$)`),
 		w:           w,
 		config:      config,
 	}

@@ -17,7 +17,6 @@ import (
 )
 
 type cmdQuotes struct {
-	name        string
 	description string
 	syntax      string
 	re          *regexp.Regexp

@@ -12,7 +12,6 @@ import (
 )
 
 type cmdEcho struct {
-	name        string
 	description string
 	syntax      string
 	re          *regexp.Regexp
