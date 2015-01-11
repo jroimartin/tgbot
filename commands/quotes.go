@@ -115,7 +115,7 @@ func (cmd *cmdQuotes) randomQuote(title string) (msg string, err error) {
 	rndInt := rand.Intn(len(lines) - 1)
 	rndQuote := lines[rndInt]
 
-	return fmt.Sprintf("Random quote: %v\n", rndQuote), nil
+	return fmt.Sprintf("Random quote: %v", rndQuote), nil
 }
 
 func (cmd *cmdQuotes) addQuote(title string, text string) (msg string, err error) {
@@ -139,5 +139,5 @@ func (cmd *cmdQuotes) addQuote(title string, text string) (msg string, err error
 		return "", fmt.Errorf("cannot add quote (%v - %v: %v)", res.StatusCode, title, text)
 	}
 
-	return fmt.Sprintf("New quote added: %v\n", text), nil
+	return fmt.Sprintf("New quote added: %v", text), nil
 }
