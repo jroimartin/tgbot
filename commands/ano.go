@@ -144,7 +144,7 @@ func (cmd *cmdAno) randomPic(title string) (filePath string, err error) {
 	}
 
 	// Download pic
-	filePath, err = download(cmd.tempDir, picsURL+data.Pic.ID)
+	filePath, err = download(cmd.tempDir, "", picsURL+data.Pic.ID)
 	if err != nil {
 		return "", err
 	}
@@ -197,7 +197,7 @@ func (cmd *cmdAno) searchTag(title string, tags []string) (filePath string, err 
 	rndData := data.Pics[rndInt]
 
 	// Download pic
-	filePath, err = download(cmd.tempDir, picsURL+rndData.ID)
+	filePath, err = download(cmd.tempDir, "", picsURL+rndData.ID)
 	if err != nil {
 		return "", err
 	}
