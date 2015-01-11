@@ -1,5 +1,5 @@
-// The following code been extracted from Go's source
-// code. Adding the suffix parameter to tempFile.
+// The following has code been extracted from Go's source
+// code. A suffix parameter was added to tempFile.
 
 package commands
 
