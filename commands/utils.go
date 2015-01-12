@@ -83,13 +83,13 @@ func tempFile(dir, prefix, suffix string) (*os.File, error) {
 	return f, nil
 }
 
-// randomStr returns a random string with the specified length.
-func randomStr(length int) (string, error) {
-	if length <= 0 {
-		return "", errors.New("length must be > 0")
+// randomStr returns a random string with length n.
+func randomStr(n int) (string, error) {
+	if n <= 0 {
+		return "", errors.New("n must be > 0")
 	}
 
-	b := make([]byte, length)
+	b := make([]byte, n)
 	for i := range b {
 		b[i] = alnum[rand.Intn(len(alnum))]
 	}
