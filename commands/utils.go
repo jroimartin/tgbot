@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 const alnum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -73,7 +74,7 @@ func tempFile(dir, prefix, suffix string) (*os.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	name := path.Join(dir, prefix+rnd+suffix)
+	name := filepath.Join(dir, prefix+rnd+suffix)
 
 	f, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
 	if os.IsExist(err) {
