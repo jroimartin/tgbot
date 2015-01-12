@@ -4,16 +4,20 @@
 
 started = 0
 
-function sanitize_str(str)
-	return string.gsub(str, " ", "_")
+function sanitize_id(str)
+	return string.gsub(str, "[\r\n ]+", "_")
+end
+
+function sanitize_text(str)
+	return string.gsub(str, "[\r\n]+", " ")
 end
 
 function get_title(from, to)
-	if (to.type == "user") then
+	if to.type == "user" then
 		return from.print_name
-	elseif (to.type == "chat") then
+	elseif to.type == "chat" then
 		return to.print_name
-	elseif (to.type == "encr_chat") then
+	elseif to.type == "encr_chat" then
 		return from.print_name
 	else
 		return ""
@@ -25,9 +29,9 @@ function on_msg_receive(msg)
 		return
 	end
 	print("[MSG] "..
-		sanitize_str(get_title(msg.from, msg.to)).." "..
-		sanitize_str(msg.from.print_name).." "..
-		msg.text)
+		sanitize_id(get_title(msg.from, msg.to)).." "..
+		sanitize_id(msg.from.print_name).." "..
+		sanitize_text(msg.text))
 end
 
 function on_binlog_replay_end()

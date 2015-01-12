@@ -72,8 +72,8 @@ func main() {
 
 func listenAndServe() error {
 	// -R: disable readline, -C: disable color, -D: disable output,
-	// -s: lua script
-	cmd := exec.Command(globalConfig.TgBin, "-R", "-C", "-D",
+	// -W: send dialog_list on start, -s: lua script
+	cmd := exec.Command(globalConfig.TgBin, "-R", "-C", "-D", "-W",
 		"-s", globalConfig.MinOutput,
 		"-k", globalConfig.TgPubKey)
 
