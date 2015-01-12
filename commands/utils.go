@@ -20,7 +20,7 @@ import (
 const alnum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func init() {
-	rand.Seed(time.Now().UnixNano() + int64(os.Getpid()))
+	rand.Seed(time.Now().UnixNano())
 }
 
 // download downloads the given URL to the directory dir in a file with a random
