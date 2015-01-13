@@ -131,7 +131,7 @@ func initCommads() {
 	enabledCommands = append(enabledCommands,
 		commands.NewCmdBreakfast(stdinTg, globalConfig.Breakfast))
 	enabledCommands = append(enabledCommands,
-			commands.NewCmdVoice(stdinTg, globalConfig.Voice))
+		commands.NewCmdVoice(stdinTg, globalConfig.Voice))
 }
 
 // shutdownCommands gracefully shuts down all commands.

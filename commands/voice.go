@@ -14,14 +14,6 @@ import (
 	"regexp"
 )
 
-func SetResourceUrl(lang, text string) string {
-	const gooTrans = "http://translate.google.com/translate_tts"
-	if lang == "" {
-		lang = "es"
-	}
-	return gooTrans + "?tl=" + url.QueryEscape(lang) + "&q=" + url.QueryEscape(text)
-}
-			
 type cmdVoice struct {
 	description string
 	syntax      string
@@ -39,9 +31,9 @@ type VoiceConfig struct {
 
 func NewCmdVoice(w io.Writer, config VoiceConfig) Command {
 	return &cmdVoice{
-		syntax:      "!v [en|es|fr] message",
+		syntax:      "!v[en|es|fr] message",
 		description: "text to speech generator courtesy of google translate",
-		re:          regexp.MustCompile(`^!v(?: (es|en|fr))? (.+$)`),
+		re:          regexp.MustCompile(`^!v(es|en|fr)? (.+$)`),
 		w:           w,
 		config:      config,
 	}
@@ -91,10 +83,12 @@ func (cmd *cmdVoice) Run(title, from, text string) error {
 	}
 
 	// Get language and text
-	arr := cmd.re.FindStringSubmatch(text)
+	matches := cmd.re.FindStringSubmatch(text)
+	lang := matches[1]
+	msg := matches[2]
 	
 	// Download sound 
-	path, err = download(cmd.tempDir, ".mp3", SetResourceUrl(arr[1], arr[2]))
+	path, err = download(cmd.tempDir, ".mp3", setResourceUrl(lang, msg))
 
 	if err != nil {
 		fmt.Fprintf(cmd.w, "msg %v error: cannot get sound\n", title)
@@ -104,4 +98,12 @@ func (cmd *cmdVoice) Run(title, from, text string) error {
 	// Send to tg as document
 	fmt.Fprintf(cmd.w, "send_document %v %v\n", title, path) 
 	return nil
+}
+
+func setResourceUrl(lang, text string) string {
+	const gooTrans = "http://translate.google.com/translate_tts"
+	if lang == "" {
+		lang = "es"
+	}
+	return gooTrans + "?tl=" + url.QueryEscape(lang) + "&q=" + url.QueryEscape(text)
 }
