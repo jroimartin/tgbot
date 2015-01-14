@@ -19,9 +19,8 @@ type cmdVoice struct {
 	syntax      string
 	re          *regexp.Regexp
 	w           io.Writer
-	config      VoiceConfig 
+	config      VoiceConfig
 
-	// Regexp used to get the pic URL
 	tempDir string
 }
 
@@ -86,7 +85,7 @@ func (cmd *cmdVoice) Run(title, from, text string) error {
 	matches := cmd.re.FindStringSubmatch(text)
 	lang := matches[1]
 	msg := matches[2]
-	
+
 	// Download sound 
 	path, err = download(cmd.tempDir, ".mp3", setResourceUrl(lang, msg))
 
@@ -96,7 +95,7 @@ func (cmd *cmdVoice) Run(title, from, text string) error {
 	}
 
 	// Send to tg as document
-	fmt.Fprintf(cmd.w, "send_document %v %v\n", title, path) 
+	fmt.Fprintf(cmd.w, "send_document %v %v\n", title, path)
 	return nil
 }
 
