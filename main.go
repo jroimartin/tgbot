@@ -47,6 +47,7 @@ type config struct {
 	Quotes    commands.QuotesConfig
 	Ano       commands.AnoConfig
 	Breakfast commands.BreakfastConfig
+	Voice     commands.VoiceConfig
 }
 
 func main() {
@@ -129,6 +130,8 @@ func initCommads() {
 		commands.NewCmdAno(stdinTg, globalConfig.Ano))
 	enabledCommands = append(enabledCommands,
 		commands.NewCmdBreakfast(stdinTg, globalConfig.Breakfast))
+	enabledCommands = append(enabledCommands,
+		commands.NewCmdVoice(stdinTg, globalConfig.Voice))
 }
 
 // shutdownCommands gracefully shuts down all commands.
