@@ -86,7 +86,7 @@ func (cmd *cmdVoice) Run(title, from, text string) error {
 	lang := matches[1]
 	msg := matches[2]
 
-	// Download sound 
+	// Download sound
 	path, err = download(cmd.tempDir, ".mp3", setResourceUrl(lang, msg))
 
 	if err != nil {
