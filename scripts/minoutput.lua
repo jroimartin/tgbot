@@ -4,12 +4,25 @@
 
 started = 0
 
+-- We must avoid \n, \r and any other character that could break the parsing
+function filter_chrs(str)
+	local s = ""
+	for i = 1, string.len(str) do
+		if string.byte(str, i) >= 32 then
+			s = s..string.sub(str, i, i)
+		else
+			s = s.." "
+		end
+	end
+	return s
+end
+
 function sanitize_id(str)
-	return string.gsub(str, "[\r\n ]+", "_")
+	return string.gsub(filter_chrs(str), " +", "_")
 end
 
 function sanitize_text(str)
-	return string.gsub(str, "[\r\n]+", " ")
+	return filter_chrs(str)
 end
 
 function get_title(from, to)
