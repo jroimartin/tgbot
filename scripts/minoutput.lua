@@ -21,10 +21,6 @@ function sanitize_id(str)
 	return string.gsub(filter_chrs(str), " +", "_")
 end
 
-function sanitize_text(str)
-	return filter_chrs(str)
-end
-
 function get_title(from, to)
 	if to.type == "user" then
 		return from.print_name
@@ -44,7 +40,7 @@ function on_msg_receive(msg)
 	print("[MSG] "..
 		sanitize_id(get_title(msg.from, msg.to)).." "..
 		sanitize_id(msg.from.print_name).." "..
-		sanitize_text(msg.text))
+		filter_chrs(msg.text))
 end
 
 function on_binlog_replay_end()
