@@ -189,7 +189,7 @@ func (cmd *cmdAno) searchTag(title string, tags []string) (filePath string, err 
 	if err != nil {
 		return "", err
 	}
-	if len(data.Pics) <= 1 { // If there aren't quotes, lines == []string{""}
+	if len(data.Pics) <= 1 {
 		return "", errors.New("no pics")
 	}
 
