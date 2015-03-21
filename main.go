@@ -42,7 +42,7 @@ type config struct {
 	TgBin     string
 	TgPubKey  string
 	MinOutput string
-	Chat      string
+	Chats     []string
 	Echo      commands.EchoConfig
 	Quotes    commands.QuotesConfig
 	Ano       commands.AnoConfig
@@ -59,7 +59,9 @@ func main() {
 	if _, err := toml.DecodeFile(configFile, &globalConfig); err != nil {
 		log.Fatalln(err)
 	}
-	globalConfig.Chat = strings.Replace(globalConfig.Chat, " ", "_", -1)
+	for i := range globalConfig.Chats {
+		globalConfig.Chats[i] = strings.Replace(globalConfig.Chats[i], " ", "_", -1)
+	}
 
 	// Clean shutdown with Ctrl-C
 	signal.Notify(sig, os.Interrupt, os.Kill)
@@ -169,8 +171,13 @@ func handleMsg(msg string) {
 
 // isMonitored returns true if "title" is monitored.
 func isMonitored(title string) bool {
-	if globalConfig.Chat == "" || globalConfig.Chat == title {
+	if len(globalConfig.Chats) == 0 {
 		return true
+	}
+	for _, c := range globalConfig.Chats {
+		if c == title {
+			return true
+		}
 	}
 	return false
 }

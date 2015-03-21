@@ -103,7 +103,7 @@ func (cmd *cmdAno) Run(title, from, text string) error {
 
 	// Send to tg as document
 	fmt.Fprintf(cmd.w, "msg %v What has been seen cannot be unseen...\n", title)
-	fmt.Fprintf(cmd.w, "send_document %v %v\n", title, path)
+	fmt.Fprintf(cmd.w, "send_photo %v %v\n", title, path)
 	return nil
 }
 

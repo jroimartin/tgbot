@@ -95,7 +95,7 @@ func (cmd *cmdVoice) Run(title, from, text string) error {
 	}
 
 	// Send to tg as document
-	fmt.Fprintf(cmd.w, "send_document %v %v\n", title, path)
+	fmt.Fprintf(cmd.w, "send_audio %v %v\n", title, path)
 	return nil
 }
 
