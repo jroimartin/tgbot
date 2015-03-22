@@ -32,6 +32,7 @@ type cmdBing struct {
 type BingConfig struct {
 	Enabled bool
 	Key     string
+	Limit   int
 }
 
 func NewCmdBing(w io.Writer, config BingConfig) Command {
@@ -100,7 +101,7 @@ func (cmd *cmdBing) Run(title, from, text string) error {
 // search returns a pic from Bing after a search using the given query.
 func (cmd *cmdBing) search(query string) (filePath string, err error) {
 	bs := utils.NewBingSearch(cmd.config.Key)
-	bs.Limit = 2
+	bs.Limit = cmd.config.Limit
 
 	results, err := bs.Query(utils.Image, query)
 	if err != nil {
