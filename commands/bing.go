@@ -101,7 +101,9 @@ func (cmd *cmdBing) Run(title, from, text string) error {
 // search returns a pic from Bing after a search using the given query.
 func (cmd *cmdBing) search(query string) (filePath string, err error) {
 	bs := utils.NewBingSearch(cmd.config.Key)
-	bs.Limit = cmd.config.Limit
+	if cmd.config.Limit > 0 {
+		bs.Limit = cmd.config.Limit
+	}
 
 	results, err := bs.Query(utils.Image, query)
 	if err != nil {
