@@ -87,7 +87,7 @@ func (k Kind) String() string {
 // Query sends a new query to Bing and returns the results.
 func (c Client) Query(k Kind, q string) ([]Result, error) {
 	uri := "https://api.datamarket.azure.com/Bing/Search/v1/" +
-		k.String() + "?Query='" + q + "'&$format=json"
+		k.String() + "?Query='" + q + "'&Adult='Off'&$format=json"
 
 	results := []Result{}
 	for i := 0; i < c.Limit; i++ {
