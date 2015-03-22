@@ -25,7 +25,6 @@ type cmdBing struct {
 	w           io.Writer
 	config      BingConfig
 
-	// Regexp used to get the pic URL
 	tempDir string
 }
 
@@ -107,7 +106,7 @@ func (cmd *cmdBing) search(query string) (filePath string, err error) {
 
 	results, err := bs.Query(utils.Image, query)
 	if err != nil {
-		return "", errors.New("query error")
+		return "", err
 	}
 	if len(results) == 0 {
 		return "", errors.New("no pics")

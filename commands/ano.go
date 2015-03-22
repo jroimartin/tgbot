@@ -29,7 +29,6 @@ type cmdAno struct {
 	w           io.Writer
 	config      AnoConfig
 
-	// Regexp used to get the pic URL
 	tempDir string
 }
 
