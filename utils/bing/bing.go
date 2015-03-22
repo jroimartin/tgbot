@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package utils
+package bing
 
 import (
 	"crypto/tls"
@@ -13,17 +13,17 @@ import (
 	"net/http"
 )
 
-// A bingResults represents the set of results returned by Bing.
-type bingResults struct {
+// response represents the set of results returned by Bing.
+type response struct {
 	D struct {
-		Results []BingResult
+		Results []Result
 		Next    string `json:"__next"`
 	}
 }
 
-// A BingResult represents one of the results returned by Bing.
-type BingResult struct {
-	MetaData    BingResultMetadata `json:"__metadata"`
+// A Result represents one of the results returned by Bing.
+type Result struct {
+	MetaData    ResultMetadata `json:"__metadata"`
 	Id          string
 	Title       string
 	Description string
@@ -32,15 +32,15 @@ type BingResult struct {
 	Url         string
 }
 
-// BingResultMetadata is the metadata linked to each result.
-type BingResultMetadata struct {
+// ResultMetadata is the metadata linked to each result.
+type ResultMetadata struct {
 	Uri  string
 	Type string
 }
 
-// A BingSearch defines the parameters needed to perform a search using the
+// A Client defines the parameters needed to perform a search using the
 // Bing API.
-type BingSearch struct {
+type Client struct {
 	key    string
 	client *http.Client
 
@@ -48,15 +48,15 @@ type BingSearch struct {
 	Limit int
 }
 
-// NewBingSearch returns a new BingSearch. The parameter key allows to specify
-// the key needed by API to be used.
-func NewBingSearch(key string) BingSearch {
-	bs := BingSearch{}
+// NewClient returns a new Client. The parameter key allows to specify
+// the API key.
+func NewClient(key string) Client {
+	c := Client{}
 	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
-	bs.client = &http.Client{Transport: tr}
-	bs.key = key
-	bs.Limit = 1
-	return bs
+	c.client = &http.Client{Transport: tr}
+	c.key = key
+	c.Limit = 1
+	return c
 }
 
 // A Kind defines the search type (web, images, video or news).
@@ -85,18 +85,18 @@ func (k Kind) String() string {
 }
 
 // Query sends a new query to Bing and returns the results.
-func (bs BingSearch) Query(k Kind, q string) ([]BingResult, error) {
+func (c Client) Query(k Kind, q string) ([]Result, error) {
 	uri := "https://api.datamarket.azure.com/Bing/Search/v1/" +
 		k.String() + "?Query='" + q + "'&$format=json"
 
-	results := []BingResult{}
-	for i := 0; i < bs.Limit; i++ {
+	results := []Result{}
+	for i := 0; i < c.Limit; i++ {
 		req, err := http.NewRequest("GET", uri, nil)
 		if err != nil {
 			return nil, err
 		}
-		req.SetBasicAuth("", bs.key)
-		resp, err := bs.client.Do(req)
+		req.SetBasicAuth("", c.key)
+		resp, err := c.client.Do(req)
 		if err != nil {
 			return nil, err
 		}
@@ -110,7 +110,7 @@ func (bs BingSearch) Query(k Kind, q string) ([]BingResult, error) {
 			return nil, errors.New("returned status is not OK")
 		}
 
-		br := bingResults{}
+		br := response{}
 		if err := json.Unmarshal(body, &br); err != nil {
 			return nil, err
 		}

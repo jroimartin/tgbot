@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/jroimartin/tgbot/utils"
+	"github.com/jroimartin/tgbot/utils/bing"
 )
 
 type cmdBing struct {
@@ -99,12 +100,12 @@ func (cmd *cmdBing) Run(title, from, text string) error {
 
 // search returns a pic from Bing after a search using the given query.
 func (cmd *cmdBing) search(query string) (filePath string, err error) {
-	bs := utils.NewBingSearch(cmd.config.Key)
+	c := bing.NewClient(cmd.config.Key)
 	if cmd.config.Limit > 0 {
-		bs.Limit = cmd.config.Limit
+		c.Limit = cmd.config.Limit
 	}
 
-	results, err := bs.Query(utils.Image, query)
+	results, err := c.Query(bing.Image, query)
 	if err != nil {
 		return "", err
 	}
