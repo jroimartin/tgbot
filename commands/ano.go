@@ -16,9 +16,9 @@ import (
 	"os"
 	"regexp"
 	"strings"
-)
 
-var errorNew = errors.New("new file")
+	"github.com/jroimartin/tgbot/utils"
+)
 
 const picsURL = "http://ano.lolcathost.org/pics/"
 
@@ -101,7 +101,7 @@ func (cmd *cmdAno) Run(title, from, text string) error {
 		return err
 	}
 
-	// Send to tg as document
+	// Send to tg as photo
 	fmt.Fprintf(cmd.w, "msg %v What has been seen cannot be unseen...\n", title)
 	fmt.Fprintf(cmd.w, "send_photo %v %v\n", title, path)
 	return nil
@@ -144,7 +144,7 @@ func (cmd *cmdAno) randomPic(title string) (filePath string, err error) {
 	}
 
 	// Download pic
-	filePath, err = download(cmd.tempDir, "", picsURL+data.Pic.ID)
+	filePath, err = utils.Download(cmd.tempDir, "", picsURL+data.Pic.ID)
 	if err != nil {
 		return "", err
 	}
@@ -197,7 +197,7 @@ func (cmd *cmdAno) searchTag(title string, tags []string) (filePath string, err 
 	rndData := data.Pics[rndInt]
 
 	// Download pic
-	filePath, err = download(cmd.tempDir, "", picsURL+rndData.ID)
+	filePath, err = utils.Download(cmd.tempDir, "", picsURL+rndData.ID)
 	if err != nil {
 		return "", err
 	}

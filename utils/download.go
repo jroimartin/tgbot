@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package commands
+package utils
 
 import (
 	"fmt"
@@ -23,13 +23,13 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-// download downloads the given URL to the directory dir in a file with a random
+// Download downloads the given URL to the directory dir in a file with a random
 // name and the extension ext and returns the path of the created file.
 // If ext is empty string the file will be created with the same extension of
 // the original file at the given url.
 // If dir is the empty string, download uses the default directory for temporary
 // files (see os.TempDir).
-func download(dir, ext, targetURL string) (filePath string, err error) {
+func Download(dir, ext, targetURL string) (filePath string, err error) {
 	res, err := http.Get(targetURL)
 	if err != nil {
 		return "", err
@@ -49,7 +49,7 @@ func download(dir, ext, targetURL string) (filePath string, err error) {
 		ext = path.Ext(u.Path)
 	}
 
-	f, err := tempFile(dir, "", ext)
+	f, err := TempFile(dir, "", ext)
 	if err != nil {
 		return "", nil
 	}
@@ -63,14 +63,14 @@ func download(dir, ext, targetURL string) (filePath string, err error) {
 	return f.Name(), nil
 }
 
-// tempFile creates a new temporary file in the directory dir with a name
+// TempFile creates a new temporary file in the directory dir with a name
 // beginning with prefix and ending with suffix, opens the file for reading and
 // writing, and returns the resulting *os.File.
 // If dir is the empty string, tempFile uses the default directory for temporary
 // files (see os.TempDir).
 // The caller can use f.Name() to find the pathname of the file. It is the
 // caller's responsibility to remove the file when no longer needed.
-func tempFile(dir, prefix, suffix string) (*os.File, error) {
+func TempFile(dir, prefix, suffix string) (*os.File, error) {
 	if dir == "" {
 		dir = os.TempDir()
 	}

@@ -12,6 +12,8 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+
+	"github.com/jroimartin/tgbot/utils"
 )
 
 type cmdVoice struct {
@@ -87,14 +89,14 @@ func (cmd *cmdVoice) Run(title, from, text string) error {
 	msg := matches[2]
 
 	// Download sound
-	path, err = download(cmd.tempDir, ".mp3", setResourceUrl(lang, msg))
+	path, err = utils.Download(cmd.tempDir, ".mp3", setResourceUrl(lang, msg))
 
 	if err != nil {
 		fmt.Fprintf(cmd.w, "msg %v error: cannot get sound\n", title)
 		return err
 	}
 
-	// Send to tg as document
+	// Send to tg as audio
 	fmt.Fprintf(cmd.w, "send_audio %v %v\n", title, path)
 	return nil
 }
