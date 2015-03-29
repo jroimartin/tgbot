@@ -32,9 +32,9 @@ type VoiceConfig struct {
 
 func NewCmdVoice(w io.Writer, config VoiceConfig) Command {
 	return &cmdVoice{
-		syntax:      "!v[en|es|fr] message",
+		syntax:      "!v[en|es|fr|ja] message",
 		description: "text to speech generator courtesy of google translate",
-		re:          regexp.MustCompile(`^!v(es|en|fr)? (.+$)`),
+		re:          regexp.MustCompile(`^!v(es|en|fr|ja)? (.+$)`),
 		w:           w,
 		config:      config,
 	}
