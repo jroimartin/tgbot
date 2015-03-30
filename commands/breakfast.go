@@ -21,7 +21,7 @@ type cmdBreakfast struct {
 	config      BreakfastConfig
 
 	// Stored items
-	items []string
+	items map[string][]string
 }
 
 type BreakfastConfig struct {
@@ -36,6 +36,7 @@ func NewCmdBreakfast(w io.Writer, config BreakfastConfig) Command {
 		re:     regexp.MustCompile(`^!b(($| [^\r\n]+$)|(-$|- \d+$))`),
 		w:      w,
 		config: config,
+		items:  make(map[string][]string),
 	}
 }
 
@@ -90,17 +91,18 @@ func (cmd *cmdBreakfast) Run(title, from, text string) error {
 
 func (cmd *cmdBreakfast) addItem(title, from, text string) error {
 	item := fmt.Sprintf("%v: %v", from, text)
-	cmd.items = append(cmd.items, item)
+	cmd.items[title] = append(cmd.items[title], item)
 	fmt.Fprintf(cmd.w, "msg %v New item added: \"%v\"\n", title, item)
 	return nil
 }
 
 func (cmd *cmdBreakfast) listItems(title string) error {
-	if len(cmd.items) < 1 {
+	items, ok := cmd.items[title]
+	if !ok || len(items) < 1 {
 		return errors.New("no items")
 	}
 
-	for i, item := range cmd.items {
+	for i, item := range items {
 		fmt.Fprintf(cmd.w, "msg %v [%v] %v\n", title, i, item)
 	}
 
@@ -108,7 +110,7 @@ func (cmd *cmdBreakfast) listItems(title string) error {
 }
 
 func (cmd *cmdBreakfast) listReset(title string) error {
-	cmd.items = []string{}
+	delete(cmd.items, title)
 	fmt.Fprintf(cmd.w, "msg %v The list has been reset\n", title)
 	return nil
 }
@@ -119,11 +121,15 @@ func (cmd *cmdBreakfast) removeItem(title, text string) error {
 		return err
 	}
 
-	if n < 0 || n > len(cmd.items)-1 {
+	items, ok := cmd.items[title]
+	if !ok {
+		return errors.New("list not found")
+	}
+	if n < 0 || n > len(items)-1 {
 		return errors.New("n is out of bounds")
 	}
 
-	cmd.items = append(cmd.items[:n], cmd.items[n+1:]...)
+	cmd.items[title] = append(items[:n], items[n+1:]...)
 	fmt.Fprintf(cmd.w, "msg %v The item %v has been removed\n", title, n)
 
 	return nil
