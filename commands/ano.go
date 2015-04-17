@@ -14,6 +14,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -100,9 +101,13 @@ func (cmd *cmdAno) Run(title, from, text string) error {
 		return err
 	}
 
-	// Send to tg as photo
+	// Send to tg as photo or document (gif's)
 	fmt.Fprintf(cmd.w, "msg %v What has been seen cannot be unseen...\n", title)
-	fmt.Fprintf(cmd.w, "send_photo %v %v\n", title, path)
+	tgcmd := "send_photo"
+	if filepath.Ext(path) == ".gif" {
+		tgcmd = "send_document"
+	}
+	fmt.Fprintf(cmd.w, "%v %v %v\n", tgcmd, title, path)
 	return nil
 }
 

@@ -12,6 +12,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -93,8 +94,12 @@ func (cmd *cmdBing) Run(title, from, text string) error {
 		return err
 	}
 
-	// Send to tg as photo
-	fmt.Fprintf(cmd.w, "send_photo %v %v\n", title, path)
+	// Send to tg as photo or document (gif's)
+	tgcmd := "send_photo"
+	if filepath.Ext(path) == ".gif" {
+		tgcmd = "send_document"
+	}
+	fmt.Fprintf(cmd.w, "%v %v %v\n", tgcmd, title, path)
 	return nil
 }
 
