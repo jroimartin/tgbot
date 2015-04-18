@@ -101,14 +101,15 @@ func (cmd *cmdFcdg) randomCard() (filePath string, err error) {
 	if err != nil {
 		return "", err
 	}
-	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
-	if err != nil {
-		return "", err
-	}
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("HTTP error: %v (%v)", resp.Status, resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
 	}
 
 	matches := imgRe.FindStringSubmatch(string(body))
