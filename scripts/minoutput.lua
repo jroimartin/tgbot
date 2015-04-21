@@ -37,6 +37,9 @@ function on_msg_receive(msg)
 	if started < 2 then -- binlog_replay_end and get_difference_end
 		return
 	end
+	if msg.out then
+		return
+	end
 	print("[MSG] "..
 		sanitize_id(get_title(msg.from, msg.to)).." "..
 		sanitize_id(msg.from.print_name).." "..

@@ -51,7 +51,7 @@ func (cmd *cmdEcho) Match(text string) bool {
 
 func (cmd *cmdEcho) Run(title, from, text string) error {
 	echoText := strings.TrimSpace(strings.TrimPrefix(text, "!e"))
-	fmt.Fprintf(cmd.w, "msg %v Echo: %v said \"%v\"\n", title, from, echoText)
+	fmt.Fprintf(cmd.w, "msg %v %v\n", title, echoText)
 	return nil
 }
 
