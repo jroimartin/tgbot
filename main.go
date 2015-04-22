@@ -50,6 +50,7 @@ type config struct {
 	Voice     commands.VoiceConfig
 	Bing      commands.BingConfig
 	Fcdg      commands.FcdgConfig
+	Hater     commands.HaterConfig
 }
 
 func main() {
@@ -140,6 +141,8 @@ func initCommads() {
 		commands.NewCmdBing(stdinTg, globalConfig.Bing))
 	enabledCommands = append(enabledCommands,
 		commands.NewCmdFcdg(stdinTg, globalConfig.Fcdg))
+	enabledCommands = append(enabledCommands,
+		commands.NewCmdHater(stdinTg, globalConfig.Hater))
 }
 
 // shutdownCommands gracefully shuts down all commands.
@@ -170,9 +173,7 @@ func handleMsg(msg string) {
 		return
 	}
 
-	if strings.HasPrefix(text, "!") {
-		handleCommand(title, from, text)
-	}
+	handleCommand(title, from, text)
 }
 
 // isMonitored returns true if "title" is monitored.
@@ -192,7 +193,7 @@ func isMonitored(title string) bool {
 func handleCommand(title, from, text string) {
 	if strings.HasPrefix(text, "!?") {
 		for _, cmd := range enabledCommands {
-			if cmd.Enabled() {
+			if cmd.Enabled() && cmd.Syntax() != "" {
 				fmt.Fprintf(stdinTg, "msg %v - %v: %v\n",
 					title, cmd.Syntax(), cmd.Description())
 			}
@@ -204,10 +205,9 @@ func handleCommand(title, from, text string) {
 		if cmd.Enabled() && cmd.Match(text) {
 			if err := cmd.Run(title, from, text); err != nil {
 				log.Println(err)
+				fmt.Fprintf(stdinTg, "msg %v error: command error\n", title)
 			}
 			return
 		}
 	}
-
-	fmt.Fprintf(stdinTg, "msg %v error: unknown command\n", title)
 }
