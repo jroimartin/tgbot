@@ -33,9 +33,9 @@ type QuotesConfig struct {
 
 func NewCmdQuotes(w io.Writer, config QuotesConfig) Command {
 	return &cmdQuotes{
-		syntax:      "!q [message]",
-		description: "If message, add a quote. Otherwise, return a random one",
-		re:          regexp.MustCompile(`^!q($| .+$)`),
+		syntax:      "!q(a) [search|addquote]",
+		description: "Return a random quote. If search is defined, a random quote matching with the search pattern will be returned. If addquote is defined, a new quote will be added",
+		re:          regexp.MustCompile(`^!q|qa($| .+$)`),
 		w:           w,
 		config:      config,
 	}
@@ -63,12 +63,20 @@ func (cmd *cmdQuotes) Run(title, from, text string) error {
 		err error
 	)
 
-	quoteText := strings.TrimSpace(strings.TrimPrefix(text, "!q"))
-	if quoteText == "" {
-		msg, err = cmd.randomQuote(title)
+	if strings.HasPrefix(text,"!qa ") {
+		quoteText := strings.TrimSpace(strings.TrimPrefix(text, "!qa"))
+		if quoteText != "" {
+			msg, err = cmd.addQuote(title, quoteText)
+		}
 	} else {
-		msg, err = cmd.addQuote(title, quoteText)
+       		quoteText := strings.TrimSpace(strings.TrimPrefix(text, "!q"))
+		if quoteText == "" {
+			msg, err = cmd.randomQuote(title)
+        	} else {
+			msg, err = cmd.searchQuote(title, quoteText)
+        	}
 	}
+	
 	if err != nil {
 		fmt.Fprintf(cmd.w, "msg %v error: cannot get or send quote\n", title)
 		return err
@@ -115,6 +123,52 @@ func (cmd *cmdQuotes) randomQuote(title string) (msg string, err error) {
 	rndQuote := lines[rndInt]
 
 	return fmt.Sprintf("Random quote: %v", rndQuote), nil
+}
+
+func (cmd *cmdQuotes) searchQuote(title string, text string) (msg string, err error) {
+        req, err := http.NewRequest("GET", cmd.config.Endpoint, nil)
+        if err != nil {
+                return "", err
+        }
+        req.SetBasicAuth(cmd.config.User, cmd.config.Password)
+        tr := &http.Transport{
+                TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+        }
+        client := &http.Client{Transport: tr}
+        res, err := client.Do(req)
+        if err != nil {
+                return "", err
+        }
+        defer res.Body.Close()
+
+        if res.StatusCode != http.StatusOK {
+                return "", fmt.Errorf("cannot get quote (%v)", res.StatusCode)
+        }
+
+        quotes, err := ioutil.ReadAll(res.Body)
+        if err != nil {
+                return "", err
+        }
+	filterWords := strings.Fields(text)
+        lines := strings.Split(string(quotes), "\n")
+	
+	linesFiltered := make([]string, 0)
+	for _, line := range lines {
+		if strings.Contains(strings.ToLower(line), strings.ToLower(filterWords[0])) {
+			linesFiltered = append (linesFiltered, line)
+		}
+	}
+
+        if len(linesFiltered) < 1 { // If there aren't quotes, linesFiltered == []string{""}
+                return "", errors.New("no quotes")
+        }
+
+	rndInt := 0
+	if len(linesFiltered) > 1  {
+		rndInt = rand.Intn(len(linesFiltered) - 1)
+	}
+	rndQuote := linesFiltered[rndInt]
+        return fmt.Sprintf("Searched quote: %v", rndQuote), nil
 }
 
 func (cmd *cmdQuotes) addQuote(title string, text string) (msg string, err error) {
