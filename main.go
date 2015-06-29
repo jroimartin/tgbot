@@ -51,6 +51,7 @@ type config struct {
 	Bing      commands.BingConfig
 	Fcdg      commands.FcdgConfig
 	Hater     commands.HaterConfig
+	Tweet	  commands.TweetConfig
 }
 
 func main() {
@@ -143,6 +144,8 @@ func initCommads() {
 		commands.NewCmdFcdg(stdinTg, globalConfig.Fcdg))
 	enabledCommands = append(enabledCommands,
 		commands.NewCmdHater(stdinTg, globalConfig.Hater))
+	enabledCommands = append(enabledCommands,
+		commands.NewCmdTweet(stdinTg, globalConfig.Tweet))
 }
 
 // shutdownCommands gracefully shuts down all commands.
