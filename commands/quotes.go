@@ -33,7 +33,7 @@ type QuotesConfig struct {
 
 func NewCmdQuotes(w io.Writer, config QuotesConfig) Command {
 	return &cmdQuotes{
-		syntax:      "!q(a) [search|addquote]",
+		syntax:      "!q(/) [search|addquote]",
 		description: "Return a random quote. If search is defined, a random quote matching with the search pattern will be returned. If addquote is defined, a new quote will be added",
 		re:          regexp.MustCompile(`^!q/?($| .+$)`),
 		w:           w,
