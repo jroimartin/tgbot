@@ -5,10 +5,12 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
 	"strings"
+
 	"github.com/ChimeraCoder/anaconda"
 )
 
@@ -21,11 +23,11 @@ type cmdTweet struct {
 }
 
 type TweetConfig struct {
-	Enabled bool
-	Consumer_Key string
-	Consumer_Secret string
-	Access_Token string
-	Access_Token_Secret string
+	Enabled           bool
+	ConsumerKey       string
+	ConsumerSecret    string
+	AccessToken       string
+	AccessTokenSecret string
 }
 
 func NewCmdTweet(w io.Writer, config TweetConfig) Command {
@@ -56,24 +58,22 @@ func (cmd *cmdTweet) Match(text string) bool {
 
 func (cmd *cmdTweet) Run(title, from, text string) error {
 	tweetText := strings.TrimSpace(strings.TrimPrefix(text, "!tw"))
-	tweetLen:=len(tweetText)
 
-	anaconda.SetConsumerKey(cmd.config.Consumer_Key)
-	anaconda.SetConsumerSecret(cmd.config.Consumer_Secret)
-	api := anaconda.NewTwitterApi(cmd.config.Access_Token, cmd.config.Access_Token_Secret)
+	anaconda.SetConsumerKey(cmd.config.ConsumerKey)
+	anaconda.SetConsumerSecret(cmd.config.ConsumerSecret)
+	api := anaconda.NewTwitterApi(cmd.config.AccessToken, cmd.config.AccessTokenSecret)
 
-	if tweetLen > 140{
+	if tweetLen := len(tweetText); tweetLen > 140 {
 		fmt.Fprintf(cmd.w, "msg %v %v chars? Mmm to much for me, size actually matters\n", title, tweetLen)
-		return nil
+		return errors.New("invalid message length")
 	} else {
-		_ , err := api.PostTweet(tweetText, nil)
-		if err != nil {
+		if _, err := api.PostTweet(tweetText, nil); err != nil {
 			fmt.Fprintf(cmd.w, "msg %v Useless humans...something went wrong\n", title)
-		} else {
-			fmt.Fprintf(cmd.w, "msg %v Congrats you did it, new boring tweet posted\n", title)
+			return err
 		}
-		return nil
+		fmt.Fprintf(cmd.w, "msg %v Congrats you did it, new boring tweet posted\n", title)
 	}
+	return nil
 }
 
 func (cmd *cmdTweet) Shutdown() error {

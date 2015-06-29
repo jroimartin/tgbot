@@ -51,7 +51,7 @@ type config struct {
 	Bing      commands.BingConfig
 	Fcdg      commands.FcdgConfig
 	Hater     commands.HaterConfig
-	Tweet	  commands.TweetConfig
+	Tweet     commands.TweetConfig
 }
 
 func main() {
