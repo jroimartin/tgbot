@@ -64,7 +64,7 @@ func (cmd *cmdTweet) Run(title, from, text string) error {
 	api := anaconda.NewTwitterApi(cmd.config.AccessToken, cmd.config.AccessTokenSecret)
 
 	if tweetLen := len(tweetText); tweetLen > 140 {
-		fmt.Fprintf(cmd.w, "msg %v %v chars? Mmm to much for me, size actually matters\n", title, tweetLen)
+		fmt.Fprintf(cmd.w, "msg %v %v chars? Mmm too much for me, size actually matters\n", title, tweetLen)
 		return errors.New("invalid message length")
 	} else {
 		if _, err := api.PostTweet(tweetText, nil); err != nil {
