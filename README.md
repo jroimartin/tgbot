@@ -1,5 +1,8 @@
 # tgbot
 
+**DEPRECATED: This Telegram bot was created before bots were officially
+supported.**
+
 ## Description
 
 Telegram bot
